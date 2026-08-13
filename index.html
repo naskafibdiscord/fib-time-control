@@ -18,58 +18,52 @@ body {
     background: #080808;
     color: white;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .container {
-    width: 90%;
-    max-width: 450px;
-    text-align: center;
+    width: 92%;
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 35px 0;
 }
 
 .logo {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
     border: 2px solid #2d7cff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 25px;
-    font-size: 28px;
+    margin: 0 auto 20px;
+    font-size: 23px;
     font-weight: bold;
     box-shadow: 0 0 30px rgba(45,124,255,0.25);
 }
 
 h1 {
-    font-size: 32px;
-    letter-spacing: 4px;
+    text-align: center;
+    font-size: 28px;
+    letter-spacing: 3px;
 }
 
 .subtitle {
+    text-align: center;
     color: #777;
-    margin-top: 8px;
-    margin-bottom: 35px;
+    margin: 8px 0 30px;
 }
 
 .card {
     background: #111;
     border: 1px solid #222;
     border-radius: 18px;
-    padding: 30px 25px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    padding: 25px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
 }
 
-.card h2 {
-    margin-bottom: 12px;
-}
-
-.card p {
-    color: #888;
-    font-size: 14px;
-    margin-bottom: 25px;
+.login {
+    text-align: center;
 }
 
 .discord {
@@ -84,14 +78,105 @@ h1 {
     cursor: pointer;
 }
 
-.discord:active {
-    transform: scale(0.98);
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    border: 2px solid #2d7cff;
+}
+
+.username {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.grade {
+    color: #777;
+    margin-top: 5px;
+}
+
+.status {
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.off {
+    background: rgba(255,60,60,0.1);
+    color: #ff5555;
+}
+
+.on {
+    background: rgba(50,255,120,0.1);
+    color: #55ff88;
+}
+
+.serviceButton {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.start {
+    background: #20b85a;
+}
+
+.stop {
+    background: #e53935;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.stat {
+    background: #0b0b0b;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.statTitle {
+    color: #777;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.statValue {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+.message {
+    text-align: center;
+    color: #ff5555;
+    margin-top: 15px;
 }
 
 .footer {
-    margin-top: 25px;
+    text-align: center;
     color: #444;
     font-size: 12px;
+    margin-top: 25px;
 }
 </style>
 </head>
@@ -110,11 +195,12 @@ h1 {
         Gestion des services F.I.B
     </div>
 
-    <div class="card">
+    <!-- CONNEXION -->
+    <div id="loginCard" class="card login">
 
         <h2>Bienvenue</h2>
 
-        <p>
+        <p style="color:#888;margin:15px 0 25px;">
             Connectez votre compte Discord
             pour accéder à votre espace agent.
         </p>
@@ -125,6 +211,125 @@ h1 {
 
     </div>
 
+    <!-- ESPACE AGENT -->
+    <div id="dashboard" class="hidden">
+
+        <div class="card">
+
+            <div class="profile">
+
+                <img id="avatar" class="avatar">
+
+                <div>
+                    <div id="username" class="username">
+                        Chargement...
+                    </div>
+
+                    <div id="grade" class="grade">
+                        Chargement...
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="status" class="status off">
+                🔴 HORS SERVICE
+            </div>
+
+            <div id="serviceInfo" class="hidden">
+
+                <p style="color:#777;text-align:center;margin-bottom:15px;">
+                    Service actuel
+                </p>
+
+                <div class="stats">
+
+                    <div class="stat">
+                        <div class="statTitle">
+                            Début
+                        </div>
+
+                        <div id="startTime" class="statValue">
+                            --
+                        </div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="statTitle">
+                            Temps actuel
+                        </div>
+
+                        <div id="currentTime" class="statValue">
+                            00h00
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button
+                id="startButton"
+                class="serviceButton start"
+                onclick="startService()">
+
+                🟢 Prendre mon service
+
+            </button>
+
+            <button
+                id="stopButton"
+                class="serviceButton stop hidden"
+                onclick="stopService()">
+
+                🔴 Terminer mon service
+
+            </button>
+
+            <div id="message" class="message"></div>
+
+        </div>
+
+        <!-- STATISTIQUES -->
+
+        <div class="card">
+
+            <h2 style="margin-bottom:18px;">
+                📊 Mes statistiques
+            </h2>
+
+            <div class="stats">
+
+                <div class="stat">
+
+                    <div class="statTitle">
+                        Temps total
+                    </div>
+
+                    <div id="totalTime" class="statValue">
+                        0h00
+                    </div>
+
+                </div>
+
+                <div class="stat">
+
+                    <div class="statTitle">
+                        Services
+                    </div>
+
+                    <div id="servicesCount" class="statValue">
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <div class="footer">
         F.I.B — Système de gestion des services
     </div>
@@ -132,9 +337,361 @@ h1 {
 </div>
 
 <script>
+
+let currentService = null;
+let timerInterval = null;
+
 function connexion() {
-    window.location.href = "/.netlify/functions/discord";
-} 
+    window.location.href =
+        "/.netlify/functions/discord";
+}
+
+function formatTime(seconds) {
+
+    const hours =
+        Math.floor(seconds / 3600);
+
+    const minutes =
+        Math.floor((seconds % 3600) / 60);
+
+    return (
+        hours +
+        "h" +
+        String(minutes).padStart(2, "0")
+    );
+}
+
+async function loadUser() {
+
+    try {
+
+        const response =
+            await fetch("/.netlify/functions/me");
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        if (!data.connected) {
+            return;
+        }
+
+        document
+            .getElementById("loginCard")
+            .classList.add("hidden");
+
+        document
+            .getElementById("dashboard")
+            .classList.remove("hidden");
+
+        const user = data.user;
+
+        document
+            .getElementById("username")
+            .textContent =
+            user.discord_username;
+
+        document
+            .getElementById("grade")
+            .textContent =
+            user.grade || "Réserviste FIB";
+
+        document
+            .getElementById("avatar")
+            .src =
+            user.avatar_url;
+
+        document
+            .getElementById("totalTime")
+            .textContent =
+            formatTime(
+                Number(user.total_seconds || 0)
+            );
+
+        document
+            .getElementById("servicesCount")
+            .textContent =
+            user.services_count || 0;
+
+        checkService();
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+async function checkService() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/.netlify/functions/service",
+                {
+                    method: "GET"
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        if (data.active) {
+
+            currentService =
+                data.service;
+
+            showActiveService();
+
+        } else {
+
+            showInactiveService();
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+async function startService() {
+
+    const button =
+        document.getElementById(
+            "startButton"
+        );
+
+    button.disabled = true;
+
+    try {
+
+        const response =
+            await fetch(
+                "/.netlify/functions/service",
+                {
+                    method: "POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            showMessage(
+                data.error ||
+                "Impossible de prendre le service."
+            );
+
+            button.disabled = false;
+
+            return;
+        }
+
+        currentService =
+            data.service;
+
+        showActiveService();
+
+    } catch (error) {
+
+        showMessage(
+            "Erreur de connexion au serveur."
+        );
+
+        button.disabled = false;
+
+    }
+
+}
+
+function showActiveService() {
+
+    document
+        .getElementById("status")
+        .className =
+        "status on";
+
+    document
+        .getElementById("status")
+        .textContent =
+        "🟢 EN SERVICE";
+
+    document
+        .getElementById("startButton")
+        .classList.add("hidden");
+
+    document
+        .getElementById("stopButton")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("serviceInfo")
+        .classList.remove("hidden");
+
+    const start =
+        new Date(
+            currentService.start_time
+        );
+
+    document
+        .getElementById("startTime")
+        .textContent =
+        start.toLocaleTimeString(
+            "fr-FR",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    updateTimer();
+
+    clearInterval(timerInterval);
+
+    timerInterval =
+        setInterval(
+            updateTimer,
+            1000
+        );
+
+}
+
+function updateTimer() {
+
+    if (!currentService)
+        return;
+
+    const start =
+        new Date(
+            currentService.start_time
+        );
+
+    const seconds =
+        Math.floor(
+            (Date.now() - start.getTime()) /
+            1000
+        );
+
+    document
+        .getElementById("currentTime")
+        .textContent =
+        formatTime(seconds);
+
+}
+
+function showInactiveService() {
+
+    currentService = null;
+
+    clearInterval(timerInterval);
+
+    document
+        .getElementById("status")
+        .className =
+        "status off";
+
+    document
+        .getElementById("status")
+        .textContent =
+        "🔴 HORS SERVICE";
+
+    document
+        .getElementById("startButton")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("stopButton")
+        .classList.add("hidden");
+
+    document
+        .getElementById("serviceInfo")
+        .classList.add("hidden");
+
+}
+
+async function stopService() {
+
+    const button =
+        document.getElementById(
+            "stopButton"
+        );
+
+    button.disabled = true;
+
+    try {
+
+        const response =
+            await fetch(
+                "/.netlify/functions/service",
+                {
+                    method: "DELETE"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            showMessage(
+                data.error ||
+                "Impossible de terminer le service."
+            );
+
+            button.disabled = false;
+
+            return;
+        }
+
+        showInactiveService();
+
+        loadUser();
+
+    } catch (error) {
+
+        showMessage(
+            "Erreur de connexion au serveur."
+        );
+
+        button.disabled = false;
+
+    }
+
+}
+
+function showMessage(text) {
+
+    document
+        .getElementById("message")
+        .textContent =
+        text;
+
+    setTimeout(() => {
+
+        document
+            .getElementById("message")
+            .textContent =
+            "";
+
+    }, 4000);
+
+}
+
+loadUser();
+
 </script>
 
 </body>
