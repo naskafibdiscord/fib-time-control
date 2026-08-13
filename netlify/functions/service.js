@@ -1,31 +1,83 @@
+import crypto from "node:crypto";
+
+function getDiscordIdFromSession(req) {
+  const cookie = req.headers.get("cookie") || "";
+  const match = cookie.match(/fib_session=([^;]+)/);
+
+  if (!match) return null;
+
+  try {
+    const decoded = Buffer.from(match[1], "base64url").toString("utf8");
+    const parts = decoded.split(".");
+
+    if (parts.length !== 3) return null;
+
+    const discordId = parts[0];
+    const timestamp = parts[1];
+    const signature = parts[2];
+
+    // Session valable 24 heures
+    if (Date.now() - Number(timestamp) > 86400000) {
+      return null;
+    }
+
+    const data = `${discordId}.${timestamp}`;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.SESSION_SECRET)
+      .update(data)
+      .digest("hex");
+
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      )
+    ) {
+      return null;
+    }
+
+    return discordId;
+  } catch {
+    return null;
+  }
+}
+
 export default async (req) => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SECRET_KEY;
 
+  const discordId = getDiscordIdFromSession(req);
+
+  if (!discordId) {
+    return new Response(
+      JSON.stringify({
+        error: "Non connecté à Discord."
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+  }
+
   if (req.method !== "POST") {
     return new Response(
-      JSON.stringify({ error: "Méthode non autorisée" }),
+      JSON.stringify({
+        error: "Méthode non autorisée."
+      }),
       {
         status: 405,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
   }
 
   try {
-    const body = await req.json();
-    const discordId = body.discord_id;
-
-    if (!discordId) {
-      return new Response(
-        JSON.stringify({ error: "Discord ID manquant" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
-    }
-
     // Vérifier si l'agent est déjà en service
     const checkResponse = await fetch(
       `${supabaseUrl}/rest/v1/service?discord_id=eq.${encodeURIComponent(discordId)}&duration_seconds=eq.0&select=*`,
@@ -42,12 +94,14 @@ export default async (req) => {
     if (!checkResponse.ok) {
       return new Response(
         JSON.stringify({
-          error: "Erreur Supabase",
+          error: "Erreur Supabase.",
           details: activeServices
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -59,7 +113,9 @@ export default async (req) => {
         }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -93,7 +149,9 @@ export default async (req) => {
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -114,7 +172,7 @@ export default async (req) => {
   } catch (error) {
     return new Response(
       JSON.stringify({
-        error: "Erreur serveur",
+        error: "Erreur serveur.",
         details: error.message
       }),
       {
