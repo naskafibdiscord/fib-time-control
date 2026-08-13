@@ -94,3 +94,4 @@ export default async (req) => {
     }
   );
 };
+console.log("FIB ME FUNCTION LOADED");
