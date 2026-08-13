@@ -1,3 +1,17 @@
+import crypto from "node:crypto";
+
+function createSession(discordId) {
+  const secret = process.env.SESSION_SECRET;
+
+  const data = `${discordId}.${Date.now()}`;
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(data)
+    .digest("hex");
+
+  return Buffer.from(`${data}.${signature}`).toString("base64url");
+}
+
 export default async (req) => {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
@@ -10,7 +24,6 @@ export default async (req) => {
   const redirectUri =
     "https://fib-time-control.netlify.app/.netlify/functions/discord";
 
-  // Pas encore connecté à Discord
   if (!code) {
     const discordUrl =
       "https://discord.com/oauth2/authorize" +
@@ -22,7 +35,6 @@ export default async (req) => {
     return Response.redirect(discordUrl, 302);
   }
 
-  // Récupération du token Discord
   const tokenResponse = await fetch(
     "https://discord.com/api/oauth2/token",
     {
@@ -43,13 +55,9 @@ export default async (req) => {
   const tokenData = await tokenResponse.json();
 
   if (!tokenResponse.ok) {
-    return new Response(
-      "Erreur Discord : " + JSON.stringify(tokenData),
-      { status: 400 }
-    );
+    return new Response("Erreur Discord.", { status: 400 });
   }
 
-  // Récupération du profil Discord
   const userResponse = await fetch(
     "https://discord.com/api/users/@me",
     {
@@ -68,12 +76,11 @@ export default async (req) => {
     );
   }
 
-  // Création de l'URL de l'avatar
   const avatarUrl = discordUser.avatar
     ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-    : `https://cdn.discordapp.com/embed/avatars/${Number(discordUser.discriminator || 0) % 5}.png`;
+    : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
-  // Vérifier si l'utilisateur existe déjà
+  // Vérifier l'utilisateur
   const searchResponse = await fetch(
     `${supabaseUrl}/rest/v1/users?discord_id=eq.${encodeURIComponent(discordUser.id)}&select=*`,
     {
@@ -87,45 +94,10 @@ export default async (req) => {
   const existingUsers = await searchResponse.json();
 
   if (!searchResponse.ok) {
-    return new Response(
-      "Erreur Supabase : " + JSON.stringify(existingUsers),
-      { status: 500 }
-    );
+    return new Response("Erreur Supabase.", { status: 500 });
   }
 
-  let user;
-
-  // Utilisateur déjà enregistré
-  if (existingUsers.length > 0) {
-    user = existingUsers[0];
-
-    // Mise à jour du pseudo et de l'avatar
-    const updateResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users?discord_id=eq.${encodeURIComponent(discordUser.id)}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation"
-        },
-        body: JSON.stringify({
-          discord_username: discordUser.username,
-          avatar_url: avatarUrl
-        })
-      }
-    );
-
-    const updatedUsers = await updateResponse.json();
-
-    if (updateResponse.ok && updatedUsers.length > 0) {
-      user = updatedUsers[0];
-    }
-  }
-
-  // Nouvel utilisateur
-  else {
+  if (existingUsers.length === 0) {
     const createResponse = await fetch(
       `${supabaseUrl}/rest/v1/users`,
       {
@@ -147,20 +119,33 @@ export default async (req) => {
       }
     );
 
-    const createdUsers = await createResponse.json();
-
     if (!createResponse.ok) {
       return new Response(
-        "Erreur lors de la création du compte : " +
-        JSON.stringify(createdUsers),
+        "Erreur lors de la création du compte.",
         { status: 500 }
       );
     }
-
-    user = createdUsers[0];
+  } else {
+    await fetch(
+      `${supabaseUrl}/rest/v1/users?discord_id=eq.${encodeURIComponent(discordUser.id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          discord_username: discordUser.username,
+          avatar_url: avatarUrl
+        })
+      }
+    );
   }
 
-  // Affichage temporaire pour vérifier que tout fonctionne
+  // Création de la session
+  const session = createSession(discordUser.id);
+
   return new Response(
     `
     <!DOCTYPE html>
@@ -168,83 +153,37 @@ export default async (req) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>F.I.B — Connexion</title>
-      <style>
-        body {
-          margin:0;
-          min-height:100vh;
-          display:flex;
-          justify-content:center;
-          align-items:center;
-          background:#080808;
-          color:white;
-          font-family:Arial,sans-serif;
-        }
-
-        .box {
-          width:90%;
-          max-width:420px;
-          background:#111;
-          border:1px solid #292929;
-          border-radius:20px;
-          padding:30px;
-          text-align:center;
-          box-sizing:border-box;
-        }
-
-        img {
-          width:90px;
-          height:90px;
-          border-radius:50%;
-          margin-bottom:15px;
-        }
-
-        h1 {
-          margin:0 0 10px;
-        }
-
-        p {
-          color:#aaa;
-        }
-
-        .ok {
-          color:#55ff88;
-          font-weight:bold;
-        }
-      </style>
+      <title>Connexion F.I.B</title>
     </head>
 
-    <body>
-      <div class="box">
-        <img src="${avatarUrl}">
-        <h1>Connexion réussie ✅</h1>
+    <body style="
+      background:#080808;
+      color:white;
+      font-family:Arial;
+      text-align:center;
+      padding:50px;
+    ">
 
-        <p class="ok">Compte enregistré dans Supabase</p>
+      <h1>Connexion réussie ✅</h1>
+      <p>Bienvenue ${discordUser.username}</p>
+      <p>Redirection vers F.I.B Time Control...</p>
 
-        <p>
-          <strong>${discordUser.username}</strong>
-        </p>
+      <script>
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
+      </script>
 
-        <p>
-          Grade : ${user.grade || "Réserviste FIB"}
-        </p>
-
-        <p>
-          Services : ${user.services_count || 0}
-        </p>
-
-        <p>
-          Temps total :
-          ${user.total_seconds || 0} secondes
-        </p>
-      </div>
     </body>
     </html>
     `,
     {
       status: 200,
       headers: {
-        "Content-Type": "text/html; charset=UTF-8"
+        "Content-Type": "text/html; charset=UTF-8",
+
+        "Set-Cookie":
+          `fib_session=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
       }
     }
   );
