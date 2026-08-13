@@ -146,45 +146,11 @@ export default async (req) => {
   // Création de la session
   const session = createSession(discordUser.id);
 
-  return new Response(
-    `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>Connexion F.I.B</title>
-    </head>
-
-    <body style="
-      background:#080808;
-      color:white;
-      font-family:Arial;
-      text-align:center;
-      padding:50px;
-    ">
-
-      <h1>Connexion réussie ✅</h1>
-      <p>Bienvenue ${discordUser.username}</p>
-      <p>Redirection vers F.I.B Time Control...</p>
-
-      <script>
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000);
-      </script>
-
-    </body>
-    </html>
-    `,
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=UTF-8",
-
-        "Set-Cookie":
-          `fib_session=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
-      }
-    }
-  );
-};
+  return new Response(null, {
+  status: 302,
+  headers: {
+    "Location": "/",
+    "Set-Cookie":
+      `fib_session=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
+  }
+});
