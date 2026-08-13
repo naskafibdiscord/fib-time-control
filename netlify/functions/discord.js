@@ -5,7 +5,7 @@ export default async (req) => {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY;
 
   const redirectUri =
     "https://fib-time-control.netlify.app/.netlify/functions/discord";
