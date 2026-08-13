@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+import crypto from "node:crypto"; 
 
 function getDiscordIdFromSession(req) {
   const cookie = req.headers.get("cookie") || "";
